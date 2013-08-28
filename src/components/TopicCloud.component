@@ -1,0 +1,20 @@
+<apex:component controller="TopicCloudController" >
+    <apex:attribute name="communityId" assignTo="{!commId}" type="Id" description="Id of the community." />
+    <apex:attribute name="querySpec" assignTo="{!query}" type="String" description="Search Spec for Topics" />
+    <apex:attribute name="pageSize" assignTo="{!pSize}" type="Integer" default="5" description="Page Size" />
+    <apex:attribute name="pageNumber" assignTo="{!pNum}" type="Integer" default="0" description="Page Number" />
+    <apex:attribute name="height" type="Integer" default="300" description="Height of Word Cloud" />
+    <apex:attribute name="width" type="Integer" default="500" description="Width of Word Cloud" />
+    
+    <apex:includeScript value="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js" />
+    <apex:includeScript value="{!$Resource.jqcloud_1_0_4_min_js}" />
+    <apex:stylesheet value="{!$Resource.jqcloud_css}" />
+    
+    <apex:outputPanel id="wordCloud" layout="block" />
+    
+    <script type="text/javascript" >
+        $(document).ready(function() {
+            $('[id="{!$Component.wordCloud}"]').jQCloud({!chatterTopicCloudJSON}, {width: {!width}, height: {!height}});
+        });
+    </script>
+</apex:component>
