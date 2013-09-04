@@ -1,26 +1,46 @@
 public class TopicCloudController {
     
     //attributes used in Chatter in Apex topic retrieval
-    public Id commId { get; set; }
-    public String query { get; set; }
     public Integer pSize { get; set; }
-    public Integer pNum { get; set; }
     
     //generates JSON string for the JQCloud plugin to render https://github.com/lucaong/jQCloud
     public String chatterTopicCloudJSON {
         get {
             //query chatter in apex API for trending topics
-            //for appropriate network / query / page number / page size
-            ConnectApi.TopicPage chatterTopicPage = ConnectApi.Topics.getTopics(commId, query, pNum, pSize);
+            //for appropriate page size
+            HTTPRequest req = new HTTPRequest();
+            req.setEndpoint(URL.getSalesforceBaseUrl().toExternalForm() + '/services/data/v28.0/chatter/topics/trending?maxResults=' + String.valueOf(pSize));
+            req.setMethod('GET');
+            req.setHeader('Authorization', 'OAuth ' + UserInfo.getSessionId());
+            
+            HTTPResponse res = new HTTP().send(req);
+            system.debug(res.getBody());
+            ChatterTopics chatterTopicPage = parseChatterTopics(res.getBody());
             
             list<WordCloudTopic> wordCloudTopics = new list<WordCloudTopic>();
             
-            for(ConnectApi.Topic chatterTopic : chatterTopicPage.topics) {
+            for(ChatterTopic chatterTopic : chatterTopicPage.topics) {
                 wordCloudTopics.add(new WordCloudTopic(chatterTopic));
             }
             
             return JSON.serialize(wordCloudTopics);
         }
+    }
+    
+    public class ChatterTopics {
+        list<ChatterTopic> topics;
+    }
+
+    public class ChatterTopic {
+        public String name;
+        public String id;
+        public String description;
+        public String createdDate;
+        public Integer talkingAbout;
+    }
+
+    public static ChatterTopics parseChatterTopics(String json) {
+        return (ChatterTopics) System.JSON.deserialize(json, ChatterTopics.class);
     }
     
     //object that represents a topic in the word cloud with weighting / description / link
@@ -30,7 +50,7 @@ public class TopicCloudController {
         public String link;
         public HtmlAttribute html;
         
-        public WordCloudTopic(ConnectApi.Topic chatterTopic) {
+        public WordCloudTopic(ChatterTopic chatterTopic) {
             this.text = chatterTopic.Name;
             this.weight = chatterTopic.TalkingAbout; // weight = number of people talking about topic
             this.link = '/' + chatterTopic.Id; // link to the topic page
